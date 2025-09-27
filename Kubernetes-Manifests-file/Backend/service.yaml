@@ -3,10 +3,11 @@ kind: Service
 metadata:
   name: api
   namespace: three-tier
-spec: 
-  ports:
-  - port: 3500
-    protocol: TCP
-  type: ClusterIP
+spec:
   selector:
     role: api
+  ports:
+    - port: 80
+      targetPort: 3500
+      protocol: TCP
+  type: ClusterIP
