@@ -8,6 +8,6 @@ spec:
     role: api
   ports:
     - port: 80
-      targetPort: 3500
+      targetPort: 80
       protocol: TCP
   type: ClusterIP
