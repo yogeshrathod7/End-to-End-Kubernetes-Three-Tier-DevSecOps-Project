@@ -41,24 +41,24 @@ spec:
                 name: mongo-sec
                 key: password
         ports:
-        - containerPort: 3500
+        - containerPort: 80
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 3500
+            port: 80
           initialDelaySeconds: 2
           periodSeconds: 5
         readinessProbe:
           httpGet:
             path: /ready
-            port: 3500
+            port: 80
           initialDelaySeconds: 5
           periodSeconds: 5
           successThreshold: 1
         startupProbe:
           httpGet:
             path: /started
-            port: 3500
+            port: 80
           initialDelaySeconds: 0
           periodSeconds: 10
           failureThreshold: 30
