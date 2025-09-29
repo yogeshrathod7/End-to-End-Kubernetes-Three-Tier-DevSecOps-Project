@@ -1,59 +1,64 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: mainlb
+  name: api
   namespace: three-tier
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-    # ALB health check configuration
-    alb.ingress.kubernetes.io/healthcheck-path: /api/healthz
-    alb.ingress.kubernetes.io/healthcheck-port: "80"
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
   labels:
-    app.kubernetes.io/instance: three-tier-ingress
+    role: api
+    env: demo
 spec:
-  ingressClassName: alb
-  rules:
-    - host: www.yogeshdevops.cloud
-      http:
-        paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 80
-          - path: /healthz
-            pathType: Exact
-            backend:
-              service:
-                name: api
-                port:
-                  number: 80
-          - path: /ready
-            pathType: Exact
-            backend:
-              service:
-                name: api
-                port:
-                  number: 80
-          - path: /started
-            pathType: Exact
-            backend:
-              service:
-                name: api
-                port:
-                  number: 80
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      role: api
+  template:
+    metadata:
+      labels:
+        role: api
+    spec:
+      imagePullSecrets:
+      - name: ecr-registry-secret
+      containers:
+      - name: api
+        image: 306266123975.dkr.ecr.us-east-1.amazonaws.com/backend:14 # Rebuild image after code update
+        imagePullPolicy: Always
+        env:
+          - name: MONGO_CONN_STR
+            value: mongodb://mongodb-svc:27017/todo?directConnection=true
+          - name: MONGO_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: username
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: password
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /api/healthz
+            port: 80
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /api/started
+            port: 80
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          failureThreshold: 30
