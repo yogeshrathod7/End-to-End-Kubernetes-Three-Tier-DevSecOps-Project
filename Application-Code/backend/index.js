@@ -10,17 +10,18 @@ connection();
 app.use(express.json());
 app.use(cors());
 
-// Health check endpoints
+// ALB root endpoint
+app.get("/", (req, res) => {
+  res.status(200).send("OK");
+});
 
-// Basic health check to see if the server is running
+// Health check endpoints
 app.get('/healthz', (req, res) => {
     res.status(200).send('Healthy');
 });
 
 let lastReadyState = null;  
-// Readiness check to see if the server is ready to serve requests
 app.get('/ready', (req, res) => {
-    // Here you can add logic to check database connection or other dependencies
     const isDbConnected = mongoose.connection.readyState === 1;
     if (isDbConnected !== lastReadyState) {
         console.log(`Database readyState: ${mongoose.connection.readyState}`);
@@ -34,13 +35,11 @@ app.get('/ready', (req, res) => {
     }
 });
 
-// Startup check to ensure the server has started correctly
 app.get('/started', (req, res) => {
-    // Assuming the server has started correctly if this endpoint is reachable
     res.status(200).send('Started');
 });
 
 app.use("/api/tasks", tasks);
 
-const port = process.env.PORT || 3500;
+const port = process.env.PORT || 80;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
